@@ -85,9 +85,12 @@ export default function UploadModal({
       setProgress(100);
 
       /* 3. UI tidy-up ---------------------------------------------------- */
-      setTimeout(() => setProgress(0), 400);
-      onClose();
-      onUploaded?.();
+      setProgress(100);
+      setTimeout(() => {
+        setProgress(0);
+        onClose();
+        onUploaded?.();
+      }, 400);
     } catch (err: any) {
       alert(`Upload failed: ${err.message ?? err}`);
     } finally {
@@ -161,7 +164,6 @@ export default function UploadModal({
           )}
 
           {/* ── progress bar ───────────────────────────────────────────── */}
-          {progress > 0 && <Progress value={progress} />}
         </div>
 
         <DialogFooter>

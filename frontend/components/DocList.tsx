@@ -12,38 +12,32 @@ interface Props {
 }
 
 export default function DocList({ orgIds, onSelect }: Props) {
-  /* ─────────────── UI / selection ─────────────── */
   const [docs, setDocs] = useState<DocMeta[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  /* ─────────────── search state ─────────────── */
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState(query);
 
-  /* debounce keystrokes (300 ms) */
+  // debounce
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQuery(query.trim()), 300);
     return () => clearTimeout(t);
   }, [query]);
 
-  /* load / search whenever orgIds or debouncedQuery change */
+  // load docs
   useEffect(() => {
     async function load() {
-      if (orgIds.length === 0) {
+      if (!orgIds.length) {
         setDocs([]);
         setSelectedId(null);
         return;
       }
-
       try {
         const newDocs =
           debouncedQuery !== ''
             ? await searchDocs(orgIds, debouncedQuery)
             : (await Promise.all(orgIds.map(docsForOrg))).flat();
-
         setDocs(newDocs);
-
-        // clear selection if the current doc disappeared
         if (selectedId && !newDocs.some((d) => d.id === selectedId)) {
           setSelectedId(null);
         }
@@ -54,7 +48,7 @@ export default function DocList({ orgIds, onSelect }: Props) {
     load();
   }, [orgIds, debouncedQuery]);
 
-  /* click-away handler: deselect when clicking outside the list */
+  // click‐away to clear selection
   const containerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -71,7 +65,7 @@ export default function DocList({ orgIds, onSelect }: Props) {
 
   return (
     <div ref={containerRef} className="space-y-1">
-      {/* ───── search bar (sticky) ───── */}
+      {/* Search bar */}
       <div className="sticky top-0 z-10 pb-2 bg-white dark:bg-gray-900">
         <div className="relative">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
@@ -84,19 +78,18 @@ export default function DocList({ orgIds, onSelect }: Props) {
         </div>
       </div>
 
-      {/* ───── document list ───── */}
+      {/* Document list */}
       <div className="space-y-1 overflow-y-auto max-h-[65vh]">
         {docs.map((d) => {
           const isSelected = d.id === selectedId;
           return (
             <div
-              key={d.id}
-              className={
-                `rounded-md px-3 py-2 cursor-pointer transition-colors ` +
-                (isSelected
+              key={d.id}                                // ← unique key
+              className={`doc-item rounded-md px-3 py-2 cursor-pointer transition-colors ${
+                isSelected
                   ? 'bg-gray-200 dark:bg-gray-700'
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-800')
-              }
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
               onClick={() => {
                 setSelectedId(d.id);
                 onSelect(d);
@@ -108,7 +101,12 @@ export default function DocList({ orgIds, onSelect }: Props) {
         })}
 
         {docs.length === 0 && (
-          <p className="text-sm text-gray-500 px-3 py-2">No docs</p>
+          <p
+            key="no-docs"                             // ← fallback key
+            className="text-sm text-gray-500 px-3 py-2"
+          >
+            No docs
+          </p>
         )}
       </div>
     </div>
