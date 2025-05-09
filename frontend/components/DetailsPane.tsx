@@ -52,12 +52,13 @@ export default function DetailsPane({
       <a
         href={`${
           process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000/api'
-        }/documents/${doc.id}/download`}
+        }/organizations/${doc.org_id}/documents/${doc.id}/download`}
         target="_blank"
         className="text-sm text-blue-600 underline"
       >
-        Direct link
+        Download
       </a>
+
 
       <pre className="text-xs text-gray-600">
         {JSON.stringify(doc, null, 2)}

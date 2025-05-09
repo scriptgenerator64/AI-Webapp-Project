@@ -2,8 +2,6 @@
 
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Settings, Info } from 'lucide-react';
 
 export type Section = 'overview' | 'ask' | 'upload';
 
@@ -17,39 +15,38 @@ export default function TabHeader({ active, onChange }: TabHeaderProps) {
     <motion.header
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur-md dark:bg-gray-900/80 px-4 sm:px-6 py-3 shadow-sm"
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur px-6 py-3 shadow"
     >
-      <div className="flex items-center justify-between">
-        {/* Left: Title */}
-        <h1 className="text-lg sm:text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+      <div className="flex items-center justify-center relative">
+        {/* Title on the left */}
+        <h1 className="absolute left-6 text-lg font-medium text-gray-900 dark:text-gray-100">
           Master Document Manager
         </h1>
 
-        {/* Center: Tabs */}
+        {/* Centered Tabs */}
         <Tabs value={active} onValueChange={(v) => onChange(v as Section)}>
-          <TabsList className="flex space-x-1 rounded-md bg-muted p-1 shadow-inner">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-md px-3 py-1.5 transition-all">
+          <TabsList className="flex space-x-2 rounded-md bg-muted p-1">
+            <TabsTrigger
+              value="overview"
+              className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded px-4 py-1 transition"
+            >
               Overview
             </TabsTrigger>
-            <TabsTrigger value="ask" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-md px-3 py-1.5 transition-all">
+            <TabsTrigger
+              value="ask"
+              className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded px-4 py-1 transition"
+            >
               Ask AI
             </TabsTrigger>
-            <TabsTrigger value="upload" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-md px-3 py-1.5 transition-all">
+            <TabsTrigger
+              value="upload"
+              className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded px-4 py-1 transition"
+            >
               Upload
             </TabsTrigger>
           </TabsList>
         </Tabs>
-
-        {/* Right: Action Buttons */}
-        <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="icon">
-            <Info className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon">
-            <Settings className="h-4 w-4" />
-          </Button>
-        </div>
       </div>
     </motion.header>
   );
