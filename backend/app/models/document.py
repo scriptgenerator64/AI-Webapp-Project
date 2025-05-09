@@ -11,7 +11,7 @@ class Document(db.Model):
                            nullable=False)
     filename   = db.Column(db.String(255), nullable=False)
     content    = db.Column(db.LargeBinary, nullable=False)
-    hash       = db.Column(db.String(64), unique=True, nullable=False)
+    hash       = db.Column(db.String(64), unique=False, nullable=False)
 
     # ✨ NEW — matches the arg the view already passes
     size_bytes = db.Column(db.Integer, nullable=False)
