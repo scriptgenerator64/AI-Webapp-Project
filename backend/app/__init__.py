@@ -31,8 +31,11 @@ def create_app() -> Flask:
     from .api.organizations import org_bp
     from .api.documents     import doc_bp
     # add others as you implement them
+    from .api.chat import bp as chat_bp
+    app.register_blueprint(chat_bp, url_prefix="/api")
+
     app.register_blueprint(org_bp, url_prefix="/api/organizations")
-    app.register_blueprint(doc_bp, url_prefix="/api/documents")
+    app.register_blueprint(doc_bp, url_prefix="/api")
 
     # Create tables on first run ----------------------------------------------
     with app.app_context():

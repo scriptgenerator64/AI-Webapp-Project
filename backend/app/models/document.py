@@ -19,3 +19,16 @@ class Document(db.Model):
     content = db.Column(db.Text, nullable=True)
 
     organization = db.relationship("Organization", back_populates="documents")
+    
+    def as_dict(self):
+        """
+        Return a dict of all column values, converting datetimes
+        to ISO‐format strings.
+        """
+        result = {}
+        for col in self.__table__.columns:
+            val = getattr(self, col.name)
+            if isinstance(val, datetime):
+                val = val.isoformat()
+            result[col.name] = val
+        return result

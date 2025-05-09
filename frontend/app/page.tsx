@@ -18,18 +18,16 @@ import { DocMeta } from "@/lib/api";
 export default function Home() {
   const [active, setActive] = useState<Section>("overview");
 
-  /* ──────────────── organisations (sidebar) ──────────────── */
+  /* ───────────── organisations (sidebar) ───────────── */
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [checked, setChecked] = useState<Record<number, boolean>>({});
 
-  /** Fetch the latest org list (used at start-up and after uploads) */
   const refreshOrgs = useCallback(() => {
-    fetch(`${API_BASE}/organizations`)
+    fetch(`${API_BASE}/organizations/`)
       .then((r) => r.json())
       .then((list: Organization[]) => {
         setOrgs(list);
-
-        /* keep existing checkboxes if still valid */
+        /* preserve existing check-state where possible */
         setChecked((prev) =>
           list.reduce(
             (acc, o) => ({ ...acc, [o.id]: prev[o.id] ?? false }),
@@ -40,17 +38,18 @@ export default function Home() {
       .catch((err) => console.error("Failed to load organisations:", err));
   }, []);
 
-  /* initial load */
   useEffect(refreshOrgs, [refreshOrgs]);
 
   const orgIds = Object.entries(checked)
     .filter(([, v]) => v)
     .map(([k]) => Number(k));
 
-  /* ──────────────── docs / details ──────────────── */
+  /* ───────────── docs / details ───────────── */
   const [selectedDoc, setSelectedDoc] = useState<DocMeta | null>(null);
+  const [refreshTick, setRefreshTick] = useState(0);
+  const forceRefreshDocs = () => setRefreshTick((t) => t + 1);
 
-  /* ──────────────── upload modal ──────────────── */
+  /* ───────────── upload modal (now global) ───────────── */
   const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   return (
@@ -61,7 +60,7 @@ export default function Home() {
         {/* ───────── Column 1 — organisations ───────── */}
         <section className="col-span-3 bg-white dark:bg-gray-800 rounded-lg p-4">
           <OrgPicker
-            organizations={orgs}                 /* ← pass list */
+            organizations={orgs}
             selected={checked}
             onToggle={(id) =>
               setChecked((c) => ({ ...c, [id]: !c[id] }))
@@ -70,17 +69,13 @@ export default function Home() {
 
           {active === "upload" && (
             <div className="pt-4">
-              <Button className="w-full" onClick={() => setIsUploadOpen(true)}>
+              <Button
+                className="w-full"
+                onClick={() => setIsUploadOpen(true)}
+              >
                 <Upload className="mr-2 h-4 w-4" />
                 New Upload
               </Button>
-
-              <UploadModal
-                isOpen={isUploadOpen}
-                onClose={() => setIsUploadOpen(false)}
-                onUploaded={refreshOrgs}          /* ← refresh sidebar */
-                organizations={orgs}
-              />
             </div>
           )}
         </section>
@@ -89,11 +84,22 @@ export default function Home() {
         {active === "overview" && (
           <>
             <section className="col-span-5 bg-white dark:bg-gray-800 rounded-lg p-4">
-              <DocList orgIds={orgIds} onSelect={setSelectedDoc} />
+              <DocList
+                key={refreshTick}
+                orgIds={orgIds}
+                onSelect={setSelectedDoc}
+              />
             </section>
 
             <section className="col-span-4 bg-white dark:bg-gray-800 rounded-lg p-4">
-              <DetailsPane doc={selectedDoc} />
+              <DetailsPane
+                doc={selectedDoc}
+                onChanged={forceRefreshDocs}
+                onDeleted={() => {
+                  forceRefreshDocs();
+                  setSelectedDoc(null);
+                }}
+              />
             </section>
           </>
         )}
@@ -104,6 +110,14 @@ export default function Home() {
           </section>
         )}
       </main>
+
+      {/* ───────── GLOBAL MODAL mounts here ───────── */}
+      <UploadModal
+        isOpen={isUploadOpen}
+        onClose={() => setIsUploadOpen(false)}
+        onUploaded={refreshOrgs}
+        organizations={orgs}
+      />
     </div>
   );
 }
