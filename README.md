@@ -1,32 +1,6 @@
 # Document Manager
 
-A full-stack document management application with a Flask backend and Next.js frontend, featuring semantic search and AI-powered chat.
-
-## Project Structure
-
-\`\`\`
-document-manager/
-├── backend/             # Flask backend
-│   ├── app/
-│   │   ├── __init__.py
-│   │   ├── models/      # Database models
-│   │   ├── api/         # API endpoints
-│   │   ├── services/    # Business logic
-│   │   └── utils/       # Utility functions
-│   ├── config.py        # Configuration
-│   ├── run.py           # Entry point
-│   └── requirements.txt # Dependencies
-│
-└── frontend/            # Next.js frontend
-    ├── public/
-    ├── src/
-    │   ├── components/  # React components
-    │   ├── lib/         # Utilities and config
-    │   ├── types/       # TypeScript types
-    │   └── app/         # Next.js pages
-    ├── package.json
-    └── tsconfig.json
-\`\`\`
+A full-stack document management application with a Flask backend and React-based frontend, featuring semantic search and AI-powered chat.
 
 ## Getting Started
 
@@ -57,7 +31,7 @@ document-manager/
    pip install -r requirements.txt
    \`\`\`
 
-5. Create a `.env` file with your OpenAI API key:
+5. Create a `.env.conf` file with your OpenAI API key:
    \`\`\`
    OPENAI_API_KEY=your_api_key_here
    \`\`\`
@@ -125,17 +99,3 @@ The frontend will be available at http://localhost:3000.
 ## Database
 
 The application uses SQLite by default, with the database file stored in `backend/instance/document_manager.db`.
-\`\`\`
-
-```python file="backend/requirements.txt" type="code"
-flask==2.3.3
-flask-sqlalchemy==3.1.1
-flask-cors==4.0.0
-werkzeug==2.3.7
-python-dotenv==1.0.0
-openai==1.12.0
-numpy==1.26.0
-scikit-learn==1.3.2
-pypdf==4.0.1
-python-docx==1.1.0
-tiktoken==0.5.2
