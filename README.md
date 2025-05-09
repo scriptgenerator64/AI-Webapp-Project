@@ -13,57 +13,39 @@ A full-stack document management application with a Flask backend and React-base
 ### Backend Setup
 
 1. Navigate to the backend directory:
-   \`\`\`
-   cd backend
-   \`\`\`
+   `cd backend`
 
 2. Create a virtual environment:
-   \`\`\`
-   python -m venv venv
-   \`\`\`
+   `python -m venv venv`
 
 3. Activate the virtual environment:
    - Windows: `venv\Scripts\activate`
    - macOS/Linux: `source venv/bin/activate`
 
 4. Install dependencies:
-   \`\`\`
-   pip install -r requirements.txt
-   \`\`\`
+   `pip install -r requirements.txt`
 
 5. Create a `.env.conf` file with your OpenAI API key:
-   \`\`\`
-   OPENAI_API_KEY=your_api_key_here
-   \`\`\`
+   `OPENAI_API_KEY=your_api_key_here`
 
 6. Run the Flask application:
-   \`\`\`
-   python run.py
-   \`\`\`
+   `python run.py`
 
 The backend will be available at http://localhost:5000.
 
 ### Frontend Setup
 
 1. Navigate to the frontend directory:
-   \`\`\`
-   cd frontend
-   \`\`\`
+   `cd frontend`
 
 2. Install dependencies:
-   \`\`\`
-   npm install
-   \`\`\`
+   `npm install`
 
 3. Create a `.env.local` file with:
-   \`\`\`
-   NEXT_PUBLIC_API_URL=http://localhost:5000/api
-   \`\`\`
+   `NEXT_PUBLIC_API_URL=http://localhost:5000/api`
 
 4. Run the development server:
-   \`\`\`
-   npm run dev
-   \`\`\`
+   `npm run dev`
 
 The frontend will be available at http://localhost:3000.
 
