@@ -16,8 +16,6 @@ MAX_CONTEXT_CHARS   = 12_000
 SYSTEM_PROMPT = (
     "You answer questions about internal documents. "
     "Quote passages inside <<< >>>. "
-    "Conclude with a line:\n"
-    "Sources: docID-chunkIdx, …"
 )
 
 client = OpenAI()
@@ -74,5 +72,23 @@ def answer(org_ids: List[int], query: str, k: int = 5) -> Tuple[str, List[str]]:
             [],
         )
 
-    sources = [f"{chunk.document_id}-{chunk.chunk_index}" for _s, chunk in hits]
+    # ── build “sources” list with filename so the UI can render it ──────────
+    seen_doc_ids: set[int] = set()
+    sources: list[dict] = []
+
+    for _score, emb in hits:
+        d = emb.document
+        if d.id in seen_doc_ids:
+            continue
+        sources.append({
+            "id": d.id,
+            "org_id": d.org_id,              # ✅ Add this field
+            "filename": d.filename,
+            "chunk_index": emb.chunk_index,  # Optional
+        })
+        seen_doc_ids.add(d.id)
+        if len(sources) == k:
+            break
+
+
     return answer_text, sources
