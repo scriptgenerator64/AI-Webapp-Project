@@ -5,25 +5,34 @@ import { Input } from '@/components/ui/input';
 import { chat, ChatChunk } from '@/lib/api';
 
 export default function AskPane({ orgIds }: { orgIds: number[] }) {
-  const [q, setQ] = useState('');
-  const [log, setLog] = useState<ChatChunk[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [q, setQ]           = useState('');
+  const [log, setLog]       = useState<ChatChunk[]>([]);
+  const [loading, setLoad]  = useState(false);
+  const [err, setErr]       = useState<string | null>(null);
 
   const ask = async () => {
-    if (!q.trim() || orgIds.length === 0) return;
-    setLoading(true);
+    if (!q.trim() || orgIds.length === 0 || loading) return;
+    setErr(null);
+    setLoad(true);
     setLog((l) => [...l, { role: 'user', content: q }]);
+
     try {
       const res = await chat(orgIds, q);
       setLog((l) => [
         ...l,
         { role: 'assistant', content: res.answer },
-        { role: 'assistant', content: `Sources:\n${res.sources
-            .map((s) => `• ${s.filename}`)
-            .join('\n')}` },
+        {
+          role: 'assistant',
+          content:
+            res.sources.length === 0
+              ? '(no sources)'
+              : `Sources:\n${res.sources.map((s) => `• ${s.filename}`).join('\n')}`,
+        },
       ]);
+    } catch (e: any) {
+      setErr(e.message ?? 'Error hitting /chat');
     } finally {
-      setLoading(false);
+      setLoad(false);
       setQ('');
     }
   };
@@ -44,18 +53,27 @@ export default function AskPane({ orgIds }: { orgIds: number[] }) {
             </p>
           </div>
         ))}
+        {err && (
+          <p className="text-sm text-red-600 dark:text-red-400 whitespace-pre-wrap">
+            {err}
+          </p>
+        )}
       </div>
+
       <div className="flex gap-2 pt-3">
         <Input
-          placeholder="Ask something…"
+          placeholder={
+            orgIds.length ? 'Ask something…' : '*Select organisation scope first*'
+          }
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && ask()}
+          disabled={loading || orgIds.length === 0}
         />
-        <Button onClick={ask} disabled={loading}>
-          Send
+        <Button onClick={ask} disabled={loading || orgIds.length === 0}>
+          {loading ? '…' : 'Send'}
         </Button>
-        <Button variant="secondary" onClick={() => setLog([])}>
+        <Button variant="secondary" onClick={() => setLog([])} disabled={loading}>
           Clear
         </Button>
       </div>
