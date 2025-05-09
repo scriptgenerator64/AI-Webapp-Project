@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
   title: "Master Document Manager Console",
-  description: "A comprehensive document management system",
+  description: "An AI-accelerated document management system",
     generator: 'v0.dev'
 }
 

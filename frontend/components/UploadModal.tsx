@@ -1,3 +1,6 @@
+/* components/UploadModal.tsx -------------------------------------------------
+   Upload files to an existing or brand-new organisation
+---------------------------------------------------------------------------- */
 "use client";
 
 import { useState } from "react";
@@ -19,9 +22,12 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { Upload, Plus, File } from "lucide-react";
+import { Upload, Plus, File, Loader2 } from "lucide-react";
 import type { Organization } from "@/types/document-types";
-import { API_BASE } from "@/lib/constants";
+import {
+  createOrg,
+  uploadDoc,
+} from "@/lib/api"; // ← use the typed helpers you already have
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -42,42 +48,79 @@ export default function UploadModal({
   const [newOrgName, setNewOrgName] = useState("");
   const [files, setFiles] = useState<FileList | null>(null);
   const [progress, setProgress] = useState(0);
+  const [busy, setBusy] = useState(false);
 
   const canSubmit =
     !!files?.length && (selectedOrgId || newOrgName.trim().length > 1);
 
-  const handleUpload = () => {
-    if (!files) return;
+  async function handleUpload() {
+    if (!files || !canSubmit || busy) return;
 
-    const form = new FormData();
-    Array.from(files).forEach((f) => form.append("files", f));
-    if (selectedOrgId && selectedOrgId !== "__new__")
-      form.append("org_id", selectedOrgId);
-    if (selectedOrgId === "__new__" && newOrgName.trim())
-      form.append("new_org_name", newOrgName.trim());
-
-    const xhr = new XMLHttpRequest();
-    xhr.upload.onprogress = (e) =>
-      setProgress(Math.round((e.loaded / e.total) * 100));
-    xhr.onload = () => {
+    try {
+      setBusy(true);
       setProgress(0);
+
+      /* 1. Get (or create) the target organisation ----------------------- */
+      let orgId: number;
+      if (selectedOrgId === "__new__") {
+        const org = await createOrg(newOrgName.trim());
+        orgId = org.id;
+      } else {
+        orgId = Number(selectedOrgId);
+      }
+
+      /* 2. Upload every file with real progress ------------------------- */
+      let done = 0;
+      const uploads = Array.from(files).map((f) =>
+        uploadDoc(orgId, f, (pct) => {
+          // combine all individual progress bars into one overall %
+          const current = Math.round(((done + pct / 100) / files.length) * 100);
+          setProgress(current);
+        }).then(() => {
+          done += 1;
+        })
+      );
+
+      await Promise.all(uploads);
+      setProgress(100);
+
+      /* 3. UI tidy-up ---------------------------------------------------- */
+      setTimeout(() => setProgress(0), 400);
       onClose();
-      onUploaded?.();                 // ← notify parent
-    };
-    xhr.onerror = () => alert("Upload failed");
-    xhr.open("POST", `${API_BASE}/documents/upload`);
-    xhr.send(form);
-  };
+      onUploaded?.();
+    } catch (err: any) {
+      alert(`Upload failed: ${err.message ?? err}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /* reset the modal every time it’s closed */
+  function resetState() {
+    setSelectedOrgId("");
+    setNewOrgName("");
+    setFiles(null);
+    setProgress(0);
+    setBusy(false);
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+          resetState();
+        }
+      }}
+    >
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Upload Documents</DialogTitle>
+          <DialogTitle>Upload documents</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* organisation selector */}
+          {/* ── organisation selector ─────────────────────────────────── */}
           <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
             <SelectTrigger>
               <SelectValue placeholder="Choose organisation…" />
@@ -103,7 +146,7 @@ export default function UploadModal({
             />
           )}
 
-          {/* file picker */}
+          {/* ── file picker ────────────────────────────────────────────── */}
           <Input
             type="file"
             multiple
@@ -111,13 +154,13 @@ export default function UploadModal({
             onChange={(e) => setFiles(e.target.files)}
           />
           {files && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+            <p className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
               <File className="h-4 w-4" />
               {files.length} file{files.length > 1 && "s"} selected
             </p>
           )}
 
-          {/* progress */}
+          {/* ── progress bar ───────────────────────────────────────────── */}
           {progress > 0 && <Progress value={progress} />}
         </div>
 
@@ -128,10 +171,17 @@ export default function UploadModal({
 
           <Button
             onClick={handleUpload}
-            disabled={!canSubmit}
-            className={cn({ "opacity-50 pointer-events-none": !canSubmit })}
+            disabled={!canSubmit || busy}
+            className={cn("gap-2", {
+              "pointer-events-none opacity-50": !canSubmit || busy,
+            })}
           >
-            <Upload className="mr-2 h-4 w-4" /> Upload
+            {busy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Upload className="h-4 w-4" />
+            )}
+            Upload
           </Button>
         </DialogFooter>
       </DialogContent>
