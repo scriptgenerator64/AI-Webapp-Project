@@ -1,78 +1,59 @@
-// lib/api.ts
-// Simple typed wrapper around the Flask → `/api` backend
-// ────────────────────────────────────────────────────────
+// lib/api.ts ────────────────────────────────────────────────────────────────
 export const BASE =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') ||
   'http://127.0.0.1:5000/api';
 
-async function request<T>(
-  path: string,
-  opts: RequestInit = {}
-): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    ...opts,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(opts.headers ?? {}),
-    },
+const jsonHeaders = { 'Content-Type': 'application/json' };
+
+async function j<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const r = await fetch(`${BASE}${path}`, {
+    ...init,
+    headers: { ...jsonHeaders, ...(init.headers ?? {}) },
   });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`${res.status} ${res.statusText} – ${text}`);
-  }
-  return (await res.json()) as T;
+  if (!r.ok) throw new Error(await r.text());
+  return r.json() as Promise<T>;
 }
 
-/* ───── ORGS ─────────────────────────────────────────── */
+/* ───────── Orgs ─────────────────────────────────────────────────────────── */
+export interface Organization { id: number; name: string }
+export const listOrgs       = ()                  => j<Organization[]>('/organizations');
+export const createOrg      = (name: string)      =>
+  j<Organization>('/organizations', { method: 'POST', body: JSON.stringify({ name }) });
 
-export interface Organization {
-  id: number;
-  name: string;
+/* ───────── Docs ─────────────────────────────────────────────────────────── */
+export interface DocMeta {
+  id: number; org_id: number; filename: string;
+  created_at: string; size_bytes: number;
 }
+export const docsForOrg     = (oid: number)       => j<DocMeta[]>(`/organizations/${oid}/documents`);
+export const removeDoc      = (id: number)        => j(`/documents/${id}`, { method: 'DELETE' });
 
-export const getOrganizations = () =>
-  request<Organization[]>('/organizations');
+export const renameDoc = (id: number, filename: string) =>
+  j(`/documents/${id}`, { method: 'PATCH', body: JSON.stringify({ filename }) });
 
-/* ───── DOCS ─────────────────────────────────────────── */
-
-export interface DocumentMeta {
-  id: number;
-  org_id: number;
-  filename: string;
-  created_at: string;
-}
-
-export const getDocsForOrg = (orgId: number) =>
-  request<DocumentMeta[]>(`/organizations/${orgId}/documents`);
-
-export const uploadDoc = (orgId: number, file: File) => {
-  const form = new FormData();
-  form.append('file', file);
-  return fetch(`${BASE}/organizations/${orgId}/documents`, {
-    method: 'POST',
-    body: form,
-  }).then((r) => {
-    if (!r.ok) throw new Error('Upload failed');
-    return r.json();
-  });
+export const replaceDoc = (id: number, file: File) => {
+  const fd = new FormData();
+  fd.append('file', file);
+  return fetch(`${BASE}/documents/${id}/replace`, { method: 'POST', body: fd });
 };
 
-/* ───── SEARCH / CHAT (optional) ─────────────────────── */
-
-export const searchDocs = (orgIds: number[], query: string, k = 5) =>
-  request<DocumentMeta[]>('/search', {
-    method: 'POST',
-    body: JSON.stringify({ org_ids: orgIds, query, k }),
+export const uploadDoc = (org_id: number, file: File,
+  onProgress?: (pct: number) => void) =>
+  new Promise<DocMeta>((res, rej) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${BASE}/organizations/${org_id}/documents`);
+    xhr.onload = () => (xhr.status === 200 ? res(JSON.parse(xhr.response)) : rej(xhr.response));
+    if (onProgress) xhr.upload.onprogress = (e) => onProgress(Math.round((e.loaded / e.total) * 100));
+    const fd = new FormData();
+    fd.append('file', file);
+    xhr.send(fd);
   });
 
-export const chat = (
-  orgIds: number[],
-  query: string,
-  k = 6,
-  temperature = 0.3
-) =>
-  request<{ answer: string }>('/chat', {
-    method: 'POST',
-    body: JSON.stringify({ org_ids: orgIds, query, k, temperature }),
-  });
+/* ───────── Search / Chat ────────────────────────────────────────────────── */
+export interface ChatChunk { role: 'user' | 'assistant'; content: string }
+export const searchDocs     = (orgIds: number[], query: string, k = 7) =>
+  j<DocMeta[]>('/search', { method: 'POST', body: JSON.stringify({ org_ids: orgIds, query, k }) });
+
+export const chat           = (orgIds: number[], query: string) =>
+  j<{ answer: string; sources: DocMeta[] }>('/chat',
+      { method: 'POST', body: JSON.stringify({ org_ids: orgIds, query }) });
