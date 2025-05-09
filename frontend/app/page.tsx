@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
-
 import TabHeader, { Section } from "@/components/TabHeader";
+import { useState } from "react";
 import OrgPicker from "@/components/OrgPicker";
 import DocList from "@/components/DocList";
 import DetailsPane from "@/components/DetailsPane";
@@ -20,48 +19,43 @@ export default function Home() {
     .map(([k]) => Number(k));
 
   return (
-    <>
-      {/* ---------- top bar ---------- */}
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       <TabHeader active={active} onChange={setActive} />
 
-      {/* ---------- main content ---------- */}
-      <main className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-        <div className="flex-1 grid grid-cols-12 gap-6 p-6">
-          {/* column 1 : organizations */}
-          <section className="col-span-3 bg-white dark:bg-gray-800 rounded-lg p-4">
-            <OrgPicker
-              selected={checked}
-              onToggle={(id) =>
-                setChecked((c) => ({ ...c, [id]: !c[id] }))
-              }
-            />
-          </section>
-
-          {/* columns 2-3 : vary by tab */}
-          {active === "overview" && (
-            <>
-              <section className="col-span-5 bg-white dark:bg-gray-800 rounded-lg p-4">
-                <DocList orgIds={orgIds} onSelect={setSelectedDoc} />
-              </section>
-              <section className="col-span-4 bg-white dark:bg-gray-800 rounded-lg p-4">
-                <DetailsPane doc={selectedDoc} />
-              </section>
-            </>
+      <main className="flex-1 grid grid-cols-12 gap-6 p-6">
+        {/* Column 1 – organizations */}
+        <section className="col-span-3 bg-white dark:bg-gray-800 rounded-lg p-4">
+          <OrgPicker
+            selected={checked}
+            onToggle={(id) =>
+              setChecked((c) => ({ ...c, [id]: !c[id] }))
+            }
+          />
+          {active === "upload" && (
+            <div className="pt-4">
+              <UploadModal />
+            </div>
           )}
+        </section>
 
-          {active === "ask" && (
-            <section className="col-span-9 bg-white dark:bg-gray-800 rounded-lg p-4 flex flex-col">
-              <AskPane orgIds={orgIds} />
+        {/* Columns 2-3 – vary by tab */}
+        {active === "overview" && (
+          <>
+            <section className="col-span-5 bg-white dark:bg-gray-800 rounded-lg p-4">
+              <DocList orgIds={orgIds} onSelect={setSelectedDoc} />
             </section>
-          )}
-        </div>
-      </main>
+            <section className="col-span-4 bg-white dark:bg-gray-800 rounded-lg p-4">
+              <DetailsPane doc={selectedDoc} />
+            </section>
+          </>
+        )}
 
-      {/* ---------- modal lives here -------- */}
-      <UploadModal
-        isOpen={active === "upload"}
-        onClose={() => setActive("overview")}
-      />
-    </>
+        {active === "ask" && (
+          <section className="col-span-9 bg-white dark:bg-gray-800 rounded-lg p-4 flex flex-col">
+            <AskPane orgIds={orgIds} />
+          </section>
+        )}
+      </main>
+    </div>
   );
 }
