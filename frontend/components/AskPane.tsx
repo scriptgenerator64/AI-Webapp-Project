@@ -5,10 +5,12 @@ import { Input } from '@/components/ui/input';
 import { chat, ChatChunk } from '@/lib/api';
 
 export default function AskPane({ orgIds }: { orgIds: number[] }) {
-  const [q, setQ]           = useState('');
-  const [log, setLog]       = useState<ChatChunk[]>([]);
-  const [loading, setLoad]  = useState(false);
-  const [err, setErr]       = useState<string | null>(null);
+  const [q, setQ] = useState('');
+  const [log, setLog] = useState<ChatChunk[]>([]);
+  const [loading, setLoad] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const API_BASE = (process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') ?? 'http://127.0.0.1:5000') + '/api';
 
   const ask = async () => {
     if (!q.trim() || orgIds.length === 0 || loading) return;
@@ -18,6 +20,7 @@ export default function AskPane({ orgIds }: { orgIds: number[] }) {
 
     try {
       const res = await chat(orgIds, q);
+
       setLog((l) => [
         ...l,
         { role: 'assistant', content: res.answer },
@@ -26,7 +29,13 @@ export default function AskPane({ orgIds }: { orgIds: number[] }) {
           content:
             res.sources.length === 0
               ? '(no sources)'
-              : `Sources:\n${res.sources.map((s) => `• ${s.filename}`).join('\n')}`,
+              : 'Sources:<br>' +
+                res.sources
+                  .map(
+                    (s) =>
+                      `• <a href="${API_BASE}/organizations/${s.org_id}/documents/${s.id}/download" target="_blank" rel="noopener noreferrer">${s.filename}</a>`
+                  )
+                  .join('<br>'),
         },
       ]);
     } catch (e: any) {
@@ -47,10 +56,9 @@ export default function AskPane({ orgIds }: { orgIds: number[] }) {
                 c.role === 'user'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-200 dark:bg-gray-700'
-              } whitespace-pre-wrap`}
-            >
-              {c.content}
-            </p>
+              }`}
+              dangerouslySetInnerHTML={{ __html: c.content }}
+            />
           </div>
         ))}
         {err && (
