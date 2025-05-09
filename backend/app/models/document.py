@@ -8,11 +8,14 @@ class Document(db.Model):
     org_id = db.Column(db.Integer, db.ForeignKey("organizations.id"), nullable=False)
     filename = db.Column(db.String(256), nullable=False)
     hash = db.Column(db.String(64), nullable=False)
-    metadata = db.Column(db.JSON, nullable=True)
+
+    # ⚠️  rename here
+    meta = db.Column(db.JSON, nullable=True)        # was `metadata`
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime,
                            default=datetime.utcnow,
                            onupdate=datetime.utcnow)
-    content = db.Column(db.Text, nullable=True)  # plaintext cache
+    content = db.Column(db.Text, nullable=True)
 
     organization = db.relationship("Organization", back_populates="documents")
