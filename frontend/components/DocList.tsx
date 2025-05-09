@@ -38,7 +38,7 @@ export default function DocList({ orgIds, onSelect }: Props) {
       try {
         const newDocs =
           debouncedQuery !== ''
-            ? await searchDocs(debouncedQuery, orgIds)
+            ? await searchDocs(orgIds, debouncedQuery)
             : (await Promise.all(orgIds.map(docsForOrg))).flat();
 
         setDocs(newDocs);

@@ -11,8 +11,8 @@ from .embeddings import semantic_search
 
 log = logging.getLogger(__name__)
 
-CHAT_MODEL = "gpt-4o-mini"          # change in one place later if needed
-MAX_CONTEXT_CHARS = 12_000          # keep the prompt safe for gpt-4o-mini
+CHAT_MODEL          = "gpt-4o-mini"
+MAX_CONTEXT_CHARS   = 12_000
 SYSTEM_PROMPT = (
     "You answer questions about internal documents. "
     "Quote passages inside <<< >>>. "
@@ -22,37 +22,28 @@ SYSTEM_PROMPT = (
 
 client = OpenAI()
 
-
-def _build_context(hits: list[Tuple[float, object]]) -> str:
+# ─────────────────────────────────────────────────────────────────────────────
+def _build_context(hits: List[Tuple[float, object]]) -> str:
     """
-    Turn the search hits into a single string:
-        (doc 17-3) first 800 chars…
-    Trim at MAX_CONTEXT_CHARS so the chat prompt never blows up.
+    Convert (score, Embedding) hits to a single context string:
+        (doc 17-3) first 800 chars …
     """
-    contexts: List[str] = []
-    total = 0
+    parts, total = [], 0
     for _score, chunk in hits:
         snippet = f"(doc {chunk.document_id}-{chunk.chunk_index}) {chunk.text[:800]}"
-        contexts.append(snippet)
+        parts.append(snippet)
         total += len(snippet)
         if total >= MAX_CONTEXT_CHARS:
             break
-    return "\n\n---\n\n".join(contexts)
+    return "\n\n---\n\n".join(parts)
 
 
+# ─────────────────────────────────────────────────────────────────────────────
 def answer(org_ids: List[int], query: str, k: int = 5) -> Tuple[str, List[str]]:
     """
-    Retrieve the top-k most relevant document chunks for *org_ids* and
-    ask the chat model to answer *query*.
-
-    Returns
-    -------
-    answer : str
-        The model’s answer, including quoted passages.
-    sources : list[str]
-        A list like ["17-3", "9-1", …] that front-end can render.
+    Retrieve → augment → chat-complete.  Returns (answer, [source ids]).
     """
-    hits = semantic_search(org_ids, query, k=k) or []
+    hits = semantic_search(org_ids, query, k=k)
 
     if not hits:
         return (
@@ -65,18 +56,18 @@ def answer(org_ids: List[int], query: str, k: int = 5) -> Tuple[str, List[str]]:
 
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": f"{context}\n\nQuestion: {query}"},
+        {"role": "user",   "content": f"{context}\n\nQuestion: {query}"},
     ]
 
     try:
         chat = client.chat.completions.create(
-            model=CHAT_MODEL,
-            messages=messages,
-            temperature=0.2,
+            model       = CHAT_MODEL,
+            messages    = messages,
+            temperature = 0.2,
         )
         answer_text = chat.choices[0].message.content.strip()
-    except OpenAIError as exc:
-        log.exception("OpenAI chat error")
+    except OpenAIError:
+        log.exception("OpenAI chat error while answering")
         return (
             "Sorry, I ran into a problem while generating the answer. "
             "Please try again in a minute.",
