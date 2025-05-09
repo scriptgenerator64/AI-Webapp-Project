@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 from flask import Flask
 from flask_cors import CORS
+from flask_migrate import Migrate
 
 from .extensions import db
 from .config import Config
@@ -20,6 +21,10 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env.conf
 def create_app() -> Flask:
     app = Flask(__name__)
     app.config.from_object(Config)
+    migrate = Migrate(app, db)
+    app.url_map.strict_slashes = False          # ← add this single line
+
+
 
     # CORS – open during dev
     CORS(app, supports_credentials=True, origins="*")

@@ -78,3 +78,13 @@ def delete_document(doc_id):
     db.session.delete(doc)
     db.session.commit()
     return jsonify({"ok": True})
+
+@doc_bp.get("/organizations/<int:org_id>/documents/<int:doc_id>/download")
+def download_document(org_id, doc_id):
+    doc = Document.query.filter_by(id=doc_id, org_id=org_id).first_or_404()
+    return (doc.content,
+            200,
+            {
+                "Content-Type": "application/octet-stream",
+                "Content-Disposition": f'attachment; filename="{doc.filename}"',
+            })
